@@ -1,5 +1,11 @@
 /*
- * ESP32_I2S_PARALLEL_V2 (Version 2)
+ * ESP32-S2_I2S_PARALLEL_V1 (Version 1)
+ * 
+ * Author:      Mrfaptastic - https://github.com/mrfaptastic/
+ * 
+ * Description: Implementation of ESP32-S2 DMA setup for ESP32-S2 SoC, which actually has
+ *				half decent technical documentation to make this possible.
+ *
  */
  
 #pragma once
@@ -22,7 +28,7 @@ extern "C" {
 #include <esp_err.h>
 #include <rom/lldesc.h>
 
-#define I2S_PARALLEL_CLOCK_HZ 80000000L
+#define I2S_PARALLEL_CLOCK_HZ 160000000L
 #define DMA_MAX (4096-4)
 
 typedef enum {
@@ -47,10 +53,7 @@ typedef struct {
 static inline int i2s_parallel_get_memory_width(i2s_port_t port, i2s_parallel_cfg_bits_t width) {
   switch(width) {
     case I2S_PARALLEL_WIDTH_8:
-      // IS21 supports space saving single byte 8 bit parallel access
-      if(port == I2S_NUM_1) {
-        return 1;
-      }
+	  return 1;
     case I2S_PARALLEL_WIDTH_16:
       return 2;
     case I2S_PARALLEL_WIDTH_24:

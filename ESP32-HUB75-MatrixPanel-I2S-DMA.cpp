@@ -484,10 +484,14 @@ void IRAM_ATTR MatrixPanel_I2S_DMA::updateMatrixDMABuffer(int16_t x_coord, int16
 	 * data.
 	 */
 
+#ifndef ESP32_S2
     // We need to update the correct uint16_t in the rowBitStruct array, that gets sent out in parallel
     // 16 bit parallel mode - Save the calculated value to the bitplane memory in reverse order to account for I2S Tx FIFO mode1 ordering
+	// Irrelevant for ESP32-S2 the way the FIFO ordering works is different - refer to page 679 of S2 technical reference manual
     x_coord & 1U ? --x_coord : ++x_coord;
-
+#endif 
+    //--x_coord;
+	
     uint16_t _colorbitclear = BITMASK_RGB1_CLEAR, _colorbitoffset = 0;
 
     if (y_coord >= ROWS_PER_FRAME){    // if we are drawing to the bottom part of the panel
@@ -669,8 +673,10 @@ void MatrixPanel_I2S_DMA::clearFrameBuffer(bool _buff_id){
       row = dma_buff.rowBits[row_idx]->getDataPtr(coloridx, _buff_id);
 
       // drive latch while shifting out last bit of RGB data
-      row[dma_buff.rowBits[row_idx]->width - 2] |= BIT_LAT;   // -1 pixel to compensate array index starting at 0
-      //row[dma_buff.rowBits[row_idx]->width - 1] |= BIT_LAT;   // -1 pixel to compensate array index starting at 0
+      //row[dma_buff.rowBits[row_idx]->width - 2] |= BIT_LAT;   // -1 pixel to compensate array index starting at 0
+	  
+	  // -1 works better on ESP32-S2 ?
+      row[dma_buff.rowBits[row_idx]->width - 1] |= BIT_LAT;   // -1 pixel to compensate array index starting at 0
 
       // need to disable OE before/after latch to hide row transition
       // Should be one clock or more before latch, otherwise can get ghosting
