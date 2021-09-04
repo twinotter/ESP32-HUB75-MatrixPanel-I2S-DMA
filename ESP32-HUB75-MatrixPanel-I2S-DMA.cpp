@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "ESP32-HUB75-MatrixPanel-I2S-DMA.h"
-//#include "xtensa/core-macros.h"
+
+#define ESP32_S2 1 // HACK ALERT 
 
 // Credits: Louis Beaudoin <https://github.com/pixelmatix/SmartMatrix/tree/teensylc>
 // and Sprite_TM: 			https://www.esp32.com/viewtopic.php?f=17&t=3188 and https://www.esp32.com/viewtopic.php?f=13&t=3256
@@ -490,7 +491,7 @@ void IRAM_ATTR MatrixPanel_I2S_DMA::updateMatrixDMABuffer(int16_t x_coord, int16
 	// Irrelevant for ESP32-S2 the way the FIFO ordering works is different - refer to page 679 of S2 technical reference manual
     x_coord & 1U ? --x_coord : ++x_coord;
 #endif 
-    //--x_coord;
+
 	
     uint16_t _colorbitclear = BITMASK_RGB1_CLEAR, _colorbitoffset = 0;
 
@@ -665,26 +666,46 @@ void MatrixPanel_I2S_DMA::clearFrameBuffer(bool _buff_id){
 	
 
     // let's set LAT/OE control bits for specific pixels in each color_index subrows
+	// Need to consider the original ESP32's (WROOM) DMA TX FIFO reordering of bytes...
     uint8_t coloridx = dma_buff.rowBits[row_idx]->color_depth;
     do {
       --coloridx;
 
-      // switch pointer to a row for a specific color index
-      row = dma_buff.rowBits[row_idx]->getDataPtr(coloridx, _buff_id);
+	  // switch pointer to a row for a specific color index
+	  row = dma_buff.rowBits[row_idx]->getDataPtr(coloridx, _buff_id);
 
-      // drive latch while shifting out last bit of RGB data
-      //row[dma_buff.rowBits[row_idx]->width - 2] |= BIT_LAT;   // -1 pixel to compensate array index starting at 0
-	  
-	  // -1 works better on ESP32-S2 ?
-      row[dma_buff.rowBits[row_idx]->width - 1] |= BIT_LAT;   // -1 pixel to compensate array index starting at 0
+	  #ifdef ESP32_S2
+		// -1 works better on ESP32-S2 ? Because bytes get sent out in order...
+		row[dma_buff.rowBits[row_idx]->width - 1] |= BIT_LAT;   // -1 pixel to compensate array index starting at 0					
+	  #else
+		// We need to update the correct uint16_t in the rowBitStruct array, that gets sent out in parallel
+		// 16 bit parallel mode - Save the calculated value to the bitplane memory in reverse order to account for I2S Tx FIFO mode1 ordering
+		// Irrelevant for ESP32-S2 the way the FIFO ordering works is different - refer to page 679 of S2 technical reference manual
+		row[dma_buff.rowBits[row_idx]->width - 2] |= BIT_LAT;   // -2 in the DMA array is actually -1 when it's reordered by TX FIFO				  
+	  #endif
 
       // need to disable OE before/after latch to hide row transition
       // Should be one clock or more before latch, otherwise can get ghosting
       uint8_t _blank = m_cfg.latch_blanking;
       do {
         --_blank;
-        row[0 + _blank] |= BIT_OE;
-        row[dma_buff.rowBits[row_idx]->width - _blank - 3 ] |= BIT_OE;    // (LAT pulse is (width-2) -1 pixel to compensate array index starting at 0
+        
+	  #ifdef ESP32_S2		
+			row[0 + _blank] |= BIT_OE;
+			row[dma_buff.rowBits[row_idx]->width - _blank - 1 ] |= BIT_OE;    // (LAT pulse is (width-2) -1 pixel to compensate array index starting at 0
+ 	  #else
+		  
+			// Original ESP32 WROOM FIFO Ordering Sucks
+			uint8_t _blank_row_tx_fifo_tmp = 0 + _blank;
+			(_blank_row_tx_fifo_tmp & 1U) ? --_blank_row_tx_fifo_tmp : ++_blank_row_tx_fifo_tmp; 
+			row[_blank_row_tx_fifo_tmp] |= BIT_OE;
+			
+			_blank_row_tx_fifo_tmp = dma_buff.rowBits[row_idx]->width - _blank - 1; // (LAT pulse is (width-2) -1 pixel to compensate array index starting at 0
+			(_blank_row_tx_fifo_tmp & 1U) ? --_blank_row_tx_fifo_tmp : ++_blank_row_tx_fifo_tmp; 
+			row[_blank_row_tx_fifo_tmp] |= BIT_OE;
+			
+	  #endif
+
       } while (_blank);
 
     } while(coloridx);
@@ -747,7 +768,17 @@ void MatrixPanel_I2S_DMA::brtCtrlOE(int brt, const bool _buff_id){
       uint8_t _blank = m_cfg.latch_blanking;
       do {
         --_blank;
-        row[0 + _blank] |= BIT_OE;
+
+	  #ifdef ESP32_S2		
+			row[0 + _blank] |= BIT_OE;
+ 	  #else 
+			// Original ESP32 WROOM FIFO Ordering Sucks
+			uint8_t _blank_row_tx_fifo_tmp = 0 + _blank;
+			(_blank_row_tx_fifo_tmp & 1U) ? --_blank_row_tx_fifo_tmp : ++_blank_row_tx_fifo_tmp; 
+			row[_blank_row_tx_fifo_tmp] |= BIT_OE;					
+	  #endif
+
+        //row[0 + _blank] |= BIT_OE;
         // no need, has been done already
         //row[dma_buff.rowBits[row_idx]->width - _blank - 3 ] |= BIT_OE;    // (LAT pulse is (width-2) -1 pixel to compensate array index starting at 0
       } while (_blank);

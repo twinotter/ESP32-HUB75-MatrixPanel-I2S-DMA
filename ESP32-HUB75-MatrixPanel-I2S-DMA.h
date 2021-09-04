@@ -1,20 +1,21 @@
 #ifndef _ESP32_RGB_64_32_MATRIX_PANEL_I2S_DMA
 #define _ESP32_RGB_64_32_MATRIX_PANEL_I2S_DMA
 
-/***************************************************************************************/
-/* COMPILE-TIME OPTIONS - Provide as part of PlatformIO project build_flags.           */
-/***************************************************************************************/
-/* Enable support for ESP32-S2 hardware only. */
+/*******************************************************************************************
+ * COMPILE-TIME OPTIONS - MUST BE PROVIDED as part of PlatformIO project build_flags.      *
+ * Changing the values just here won't work - as defines needs to persist beyond the scope *
+ * of just this file.                                                                      *
+/*******************************************************************************************/
+
+/* Enable support for ESP32-S2 hardware only.                                  */
 #define ESP32_S2 1
 
 /* Enable serial debugging of the library, to see how memory is allocated etc. */
 //#define SERIAL_DEBUG 1
 
-/*
- * Do NOT build additional methods optimized for fast drawing,
- * i.e. Adafruits drawFastHLine, drawFastVLine, etc...
- */
-#define NO_FAST_FUNCTIONS
+/* Do NOT build additional methods optimized for fast drawing,
+ * i.e. Adafruits drawFastHLine, drawFastVLine, etc...                         */
+//#define NO_FAST_FUNCTIONS
 
 /* Use GFX_Root (https://github.com/mrfaptastic/GFX_Root) instead of Adafruit_GFX library.
  * > Removes Bus_IO & Wire.h library dependencies. 
@@ -22,7 +23,6 @@
  * > Requires FastLED.h
  */
 //#define USE_GFX_ROOT 1
-
 
 /* Physical / Chained HUB75(s) RGB pixel WIDTH and HEIGHT. 
  *
