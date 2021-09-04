@@ -5,7 +5,7 @@
  * COMPILE-TIME OPTIONS - MUST BE PROVIDED as part of PlatformIO project build_flags.      *
  * Changing the values just here won't work - as defines needs to persist beyond the scope *
  * of just this file.                                                                      *
-/*******************************************************************************************/
+ *******************************************************************************************/
 
 /* Enable support for ESP32-S2 hardware only.                                  */
 #define ESP32_S2 1
