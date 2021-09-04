@@ -124,7 +124,7 @@ void link_dma_desc(volatile lldesc_t *dmadesc, volatile lldesc_t *prevdmadesc, v
 }
 
 
-
+// ESP32-S2 only has IS20
 esp_err_t i2s_parallel_driver_install(i2s_port_t port, i2s_parallel_config_t* conf) {
   if(port < I2S_NUM_0 || port >= I2S_NUM_MAX) {
     return ESP_ERR_INVALID_ARG;
@@ -205,7 +205,7 @@ esp_err_t i2s_parallel_driver_install(i2s_port_t port, i2s_parallel_config_t* co
   dev->conf2.lcd_tx_sdx2_en=0; 
   
   dev->conf.val = 0;  
-  dev->conf.tx_slave_mod = 0; 
+  //dev->conf.tx_slave_mod = 0; 
   
   dev->conf.tx_dma_equal=1; // esp32-s2 only
   //dev->conf.tx_mono=0; // esp32-s2 only    

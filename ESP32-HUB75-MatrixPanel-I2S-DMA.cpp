@@ -866,8 +866,14 @@ void MatrixPanel_I2S_DMA::hlineDMA(int16_t x_coord, int16_t y_coord, int16_t l, 
     int16_t _l = l;
     do {                 // iterate pixels in a row
         int16_t _x = x_coord + --_l;
+		
+#ifdef ESP32_S2		
+        // ESP 32 doesn't need byte flipping for TX FIFO.
+        uint16_t &v = p[_x];
+#else
         // Save the calculated value to the bitplane memory in reverse order to account for I2S Tx FIFO mode1 ordering
         uint16_t &v = p[_x & 1U ? --_x : ++_x];
+#endif		
 
         v &= _colorbitclear;      // reset color bits
         v |= RGB_output_bits;    // set new color bits
@@ -902,8 +908,10 @@ void MatrixPanel_I2S_DMA::vlineDMA(int16_t x_coord, int16_t y_coord, int16_t l, 
 	blue  = lumConvTab[blue]; 	
 #endif
 
-  // Save the calculated value to the bitplane memory in reverse order to account for I2S Tx FIFO mode1 ordering
+#ifndef ESP32_S2
+  // Save the calculated value to the bitplane memory in reverse order to account for I2S Tx FIFO mode1 ordering 
   x_coord & 1U ? --x_coord : ++x_coord;
+#endif  
 
   uint8_t color_depth_idx = PIXEL_COLOR_DEPTH_BITS;
   do {    // Iterating through color depth bits (8 iterations)

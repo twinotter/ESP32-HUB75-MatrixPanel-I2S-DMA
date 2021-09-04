@@ -1,14 +1,14 @@
 #ifndef _ESP32_RGB_64_32_MATRIX_PANEL_I2S_DMA
 #define _ESP32_RGB_64_32_MATRIX_PANEL_I2S_DMA
 
-#define ESP32_S2 1
-
 /***************************************************************************************/
 /* COMPILE-TIME OPTIONS - Provide as part of PlatformIO project build_flags.           */
 /***************************************************************************************/
+/* Enable support for ESP32-S2 hardware only. */
+#define ESP32_S2 1
+
 /* Enable serial debugging of the library, to see how memory is allocated etc. */
 //#define SERIAL_DEBUG 1
-
 
 /*
  * Do NOT build additional methods optimized for fast drawing,
@@ -81,7 +81,7 @@
 // 8bit per RGB color = 24 bit/per pixel,
 // might be reduced to save DMA RAM
 #ifndef PIXEL_COLOR_DEPTH_BITS
- #define PIXEL_COLOR_DEPTH_BITS      2
+ #define PIXEL_COLOR_DEPTH_BITS      8
 #endif
 
 #define COLOR_CHANNELS_PER_PIXEL     3
