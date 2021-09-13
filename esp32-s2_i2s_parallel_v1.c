@@ -26,7 +26,7 @@
 #include <esp32-s2_i2s_parallel_v1.h>
 
 // For I2S<N> frame buffer state management.
-static i2s_parallel_state_t *i2s_state = NULL;
+volatile i2s_parallel_state_t *i2s_state = NULL;
 
 callback shiftCompleteCallback;
 void setShiftCompleteCallback(callback f) {
